@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" role="img" aria-labelledby="title desc">
+  <title id="title">Eventix</title>
+  <desc id="desc">Logo de Eventix con una boleta azul y lineas amarillas de movimiento.</desc>
+  <defs>
+    <linearGradient id="ticketGradient" x1="50" y1="35" x2="190" y2="125" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#008aa6"/>
+      <stop offset="1" stop-color="#004562"/>
+    </linearGradient>
+  </defs>
+  <g transform="rotate(-14 120 80)">
+    <path d="M58 47h135c8 0 14 6 14 14v18c-13 2-23 13-23 27s10 25 23 27v18c0 8-6 14-14 14H58c-8 0-14-6-14-14v-18c13-2 23-13 23-27S57 81 44 79V61c0-8 6-14 14-14z" fill="#004562"/>
+    <path d="M66 58h119c5 0 9 4 9 9v8c-13 6-22 18-22 31s9 25 22 31v8c0 5-4 9-9 9H66c-5 0-9-4-9-9v-8c13-6 22-18 22-31S70 81 57 75v-8c0-5 4-9 9-9z" fill="url(#ticketGradient)" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M140 63v87" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-dasharray="9 10"/>
+    <path d="M15 88h39M5 106h52M18 124h36" fill="none" stroke="#f7b500" stroke-width="10" stroke-linecap="round"/>
+  </g>
+</svg>
