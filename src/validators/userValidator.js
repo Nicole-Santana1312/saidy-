@@ -10,8 +10,8 @@ const userSearchValidator = [
 
 const userIdValidator = [
   param("id")
-    .isInt({ min: 1 })
-    .withMessage("El id del usuario debe ser un numero valido."),
+    .isUUID()
+    .withMessage("El id del usuario debe ser valido."),
 ];
 
 module.exports = {

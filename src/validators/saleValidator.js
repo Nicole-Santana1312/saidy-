@@ -3,8 +3,8 @@ const { body, query } = require("express-validator");
 const saleFilterValidator = [
   query("evento_id")
     .optional()
-    .isInt({ min: 1 })
-    .withMessage("El filtro de evento debe ser un numero valido."),
+    .isUUID()
+    .withMessage("El filtro de evento debe ser valido."),
 ];
 
 const saleValidator = [
@@ -15,7 +15,7 @@ const saleValidator = [
     .isLength({ max: 120 })
     .withMessage("El usuario no puede superar 120 caracteres."),
   body("tipo_boleta_id")
-    .isInt({ min: 1 })
+    .isUUID()
     .withMessage("Debes seleccionar un tipo de boleta valido."),
   body("cantidad")
     .isInt({ min: 1 })

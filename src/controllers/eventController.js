@@ -1,4 +1,5 @@
 const eventModel = require("../models/eventModel");
+const ticketTypeModel = require("../models/ticketTypeModel");
 
 async function renderEventsPage(req, res) {
   return res.send(`
@@ -41,14 +42,47 @@ async function renderEventsPage(req, res) {
               <label for="fecha">Fecha</label>
               <input id="fecha" name="fecha" type="date" required />
 
+              <label for="hora">Hora</label>
+              <input id="hora" name="hora" type="time" required />
+
               <label for="lugar">Lugar</label>
               <input id="lugar" name="lugar" type="text" maxlength="160" required />
 
-              <label for="imagen">Imagen URL</label>
-              <input id="imagen" name="imagen" type="url" placeholder="https://ejemplo.com/evento.jpg" required />
+              <label for="categoria">Categoria</label>
+              <select id="categoria" name="categoria" required>
+                <option value="concierto">Concierto</option>
+                <option value="stand_up">Stand up</option>
+                <option value="actividad">Actividad</option>
+              </select>
+
+              <label for="estado">Estado</label>
+              <select id="estado" name="estado" required>
+                <option value="activo">Activo</option>
+                <option value="pausado">Pausado</option>
+                <option value="finalizado">Finalizado</option>
+              </select>
+
+              <label for="imagen">Imagen</label>
+              <div class="image-picker">
+                <input id="imagen" name="imagen" type="text" placeholder="https://ejemplo.com/evento.jpg" />
+                <label class="compact-button secondary image-picker-button" for="imagen_archivo">Escoger de la PC</label>
+                <input id="imagen_archivo" name="imagen_archivo" type="file" accept="image/*" data-image-file hidden />
+              </div>
+              <img class="image-preview" data-image-preview alt="Vista previa" hidden />
 
               <label for="descripcion">Descripcion</label>
               <textarea id="descripcion" name="descripcion" rows="4" maxlength="1000" required></textarea>
+
+              <div class="ticket-inline-section" data-ticket-inline-section>
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Boleteria</p>
+                    <h2>Tipos y precios</h2>
+                  </div>
+                  <button class="compact-button secondary" type="button" data-add-ticket-row>Agregar tipo</button>
+                </div>
+                <div class="ticket-inline-list" data-ticket-rows></div>
+              </div>
 
               <button type="submit" data-submit-button>Guardar evento</button>
             </form>
@@ -94,10 +128,39 @@ async function getEvent(req, res, next) {
 
 async function createEvent(req, res, next) {
   try {
+    const ticketTypes = Array.isArray(req.body.ticket_types)
+      ? req.body.ticket_types
+      : [];
+
+    if (ticketTypes.length === 0) {
+      return res.status(400).json({
+        message: "Debes agregar al menos un tipo de boleta para crear el evento.",
+      });
+    }
+
     const event = await eventModel.createEvent(req.body);
+    const createdTicketTypes = [];
+
+    try {
+      for (const ticketType of ticketTypes) {
+        createdTicketTypes.push(
+          await ticketTypeModel.createTicketType({
+            evento_id: event.id,
+            tipo: ticketType.tipo,
+            precio: ticketType.precio,
+            cantidad_disponible: ticketType.cantidad_disponible,
+          })
+        );
+      }
+    } catch (ticketError) {
+      await eventModel.deleteEvent(event.id);
+      throw ticketError;
+    }
+
     return res.status(201).json({
-      message: "Evento creado correctamente.",
+      message: "Evento y boletas creados correctamente.",
       event,
+      ticketTypes: createdTicketTypes,
     });
   } catch (error) {
     return next(error);

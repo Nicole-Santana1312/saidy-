@@ -1,26 +1,27 @@
 const { body, param } = require("express-validator");
 
-const allowedTypes = ["General", "VIP", "Preferencial"];
-
 const ticketTypeIdValidator = [
   param("id")
-    .isInt({ min: 1 })
-    .withMessage("El id de la boleta debe ser un numero valido."),
+    .isUUID()
+    .withMessage("El id de la boleta debe ser valido."),
 ];
 
 const eventIdParamValidator = [
   param("eventoId")
-    .isInt({ min: 1 })
-    .withMessage("El id del evento debe ser un numero valido."),
+    .isUUID()
+    .withMessage("El id del evento debe ser valido."),
 ];
 
 const ticketTypeValidator = [
   body("evento_id")
-    .isInt({ min: 1 })
+    .isUUID()
     .withMessage("Debes seleccionar un evento valido."),
   body("tipo")
-    .isIn(allowedTypes)
-    .withMessage("El tipo debe ser General, VIP o Preferencial."),
+    .trim()
+    .notEmpty()
+    .withMessage("El nombre del tipo es obligatorio.")
+    .isLength({ max: 60 })
+    .withMessage("El nombre del tipo no puede superar 60 caracteres."),
   body("precio")
     .isFloat({ min: 0 })
     .withMessage("El precio debe ser un numero mayor o igual a cero."),

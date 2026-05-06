@@ -4,14 +4,27 @@ const messageBox = document.querySelector("[data-form-message]");
 const resetButton = document.querySelector("[data-reset-form]");
 const submitButton = document.querySelector("[data-submit-button]");
 const formTitle = document.querySelector("#form-title");
+const ticketRows = document.querySelector("[data-ticket-rows]");
+const addTicketRowButton = document.querySelector("[data-add-ticket-row]");
+const ticketInlineSection = document.querySelector("[data-ticket-inline-section]");
+const imageFileInput = document.querySelector("[data-image-file]");
+const imagePreview = document.querySelector("[data-image-preview]");
 
 async function loadEvents() {
-  const response = await fetch("/api/eventos", {
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
+  try {
+    const response = await fetch("/api/eventos", {
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
 
-  renderEvents(data.events || []);
+    if (!response.ok) {
+      throw new Error(data.message || "No se pudieron cargar los eventos.");
+    }
+
+    renderEvents(data.events || []);
+  } catch (error) {
+    eventsList.innerHTML = `<p class="empty-state">Error: ${escapeHtml(error.message)}</p>`;
+  }
 }
 
 function renderEvents(events) {
@@ -30,7 +43,8 @@ function renderEventCard(event) {
       <div class="event-card-body">
         <span>${formatDate(event.fecha)}</span>
         <h3>${escapeHtml(event.nombre)}</h3>
-        <p>${escapeHtml(event.lugar)}</p>
+        <p>${escapeHtml(event.lugar)} - ${escapeHtml(event.hora || "Hora pendiente")}</p>
+        <p>${formatCategory(event.categoria)} - ${formatStatus(event.estado)}</p>
         <p>${escapeHtml(event.descripcion)}</p>
         <div class="event-card-actions">
           <button type="button" class="compact-button" data-edit-id="${event.id}">Editar</button>
@@ -43,34 +57,54 @@ function renderEventCard(event) {
 
 async function handleSubmit(event) {
   event.preventDefault();
+  setSubmitState(true);
 
-  const formData = new FormData(form);
-  const id = formData.get("id");
-  const payload = {
-    nombre: formData.get("nombre").trim(),
-    fecha: formData.get("fecha"),
-    lugar: formData.get("lugar").trim(),
-    descripcion: formData.get("descripcion").trim(),
-    imagen: formData.get("imagen").trim(),
-  };
+  try {
+    const formData = new FormData(form);
+    const id = formData.get("id");
+    const imageValue = await getSelectedImageValue(formData);
+    const payload = {
+      nombre: formData.get("nombre").trim(),
+      fecha: formData.get("fecha"),
+      hora: formData.get("hora"),
+      lugar: formData.get("lugar").trim(),
+      categoria: formData.get("categoria"),
+      estado: formData.get("estado"),
+      descripcion: formData.get("descripcion").trim(),
+      imagen: imageValue,
+    };
 
-  const url = id ? `/api/eventos/${id}` : "/api/eventos";
-  const method = id ? "PUT" : "POST";
-  const response = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
+    if (!id) {
+      payload.ticket_types = getTicketTypePayload();
 
-  if (!response.ok) {
-    showMessage(data.errors ? data.errors.join(" ") : data.message, true);
-    return;
+      if (payload.ticket_types.length === 0) {
+        showMessage("Agrega al menos un tipo de boleta con precio, stock y tipo.", true);
+        return;
+      }
+    }
+
+    const url = id ? `/api/eventos/${id}` : "/api/eventos";
+    const method = id ? "PUT" : "POST";
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await readJsonResponse(response);
+
+    if (!response.ok) {
+      showMessage(data.errors ? data.errors.join(" ") : data.message, true);
+      return;
+    }
+
+    showMessage(data.message, false);
+    resetForm();
+    await loadEvents();
+  } catch (error) {
+    showMessage(`Error: ${error.message}`, true);
+  } finally {
+    setSubmitState(false);
   }
-
-  showMessage(data.message, false);
-  resetForm();
-  await loadEvents();
 }
 
 async function handleListClick(event) {
@@ -87,25 +121,54 @@ async function handleListClick(event) {
 }
 
 async function fillFormForEdit(id) {
-  const response = await fetch(`/api/eventos/${id}`, {
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
+  try {
+    const response = await fetch(`/api/eventos/${id}`, {
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
 
-  if (!response.ok) {
-    showMessage(data.message, true);
-    return;
+    if (!response.ok) {
+      showMessage(data.message, true);
+      return;
+    }
+
+    form.elements.id.value = data.event.id;
+    form.elements.nombre.value = data.event.nombre;
+    form.elements.fecha.value = data.event.fecha.slice(0, 10);
+    form.elements.hora.value = data.event.hora || "";
+    form.elements.lugar.value = data.event.lugar;
+    form.elements.categoria.value = data.event.categoria || "concierto";
+    form.elements.estado.value = data.event.estado || "activo";
+    form.elements.descripcion.value = data.event.descripcion;
+    form.elements.imagen.value = data.event.imagen;
+    updateImagePreview(data.event.imagen);
+    ticketInlineSection.hidden = true;
+    submitButton.textContent = "Actualizar evento";
+    formTitle.textContent = "Editar evento";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (error) {
+    showMessage(`Error: ${error.message}`, true);
   }
+}
 
-  form.elements.id.value = data.event.id;
-  form.elements.nombre.value = data.event.nombre;
-  form.elements.fecha.value = data.event.fecha.slice(0, 10);
-  form.elements.lugar.value = data.event.lugar;
-  form.elements.descripcion.value = data.event.descripcion;
-  form.elements.imagen.value = data.event.imagen;
-  submitButton.textContent = "Actualizar evento";
-  formTitle.textContent = "Editar evento";
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function formatCategory(value) {
+  const labels = {
+    concierto: "Concierto",
+    stand_up: "Stand up",
+    actividad: "Actividad",
+  };
+
+  return labels[value] || "Sin categoria";
+}
+
+function formatStatus(value) {
+  const labels = {
+    activo: "Activo",
+    pausado: "Pausado",
+    finalizado: "Finalizado",
+  };
+
+  return labels[value] || "Activo";
 }
 
 async function removeEvent(id) {
@@ -115,27 +178,171 @@ async function removeEvent(id) {
     return;
   }
 
-  const response = await fetch(`/api/eventos/${id}`, {
-    method: "DELETE",
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
+  try {
+    const response = await fetch(`/api/eventos/${id}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
 
-  showMessage(data.message, !response.ok);
-  await loadEvents();
+    showMessage(data.message, !response.ok);
+    await loadEvents();
+  } catch (error) {
+    showMessage(`Error: ${error.message}`, true);
+  }
 }
 
 function resetForm() {
   form.reset();
   form.elements.id.value = "";
+  imagePreview.hidden = true;
+  imagePreview.removeAttribute("src");
+  ticketInlineSection.hidden = false;
+  renderDefaultTicketRows();
   submitButton.textContent = "Guardar evento";
   formTitle.textContent = "Crear evento";
 }
 
+function renderDefaultTicketRows() {
+  ticketRows.innerHTML = "";
+  addTicketRow({ tipo: "General", precio: "", cantidad_disponible: "" });
+}
+
+function addTicketRow(values = {}) {
+  const row = document.createElement("div");
+  row.className = "ticket-inline-row";
+  row.innerHTML = `
+    <div>
+      <label>Tipo</label>
+      <input name="ticket_tipo" type="text" maxlength="60" placeholder="VIP, Platea, Palcos" value="${escapeHtml(values.tipo || "")}" required />
+    </div>
+    <div>
+      <label>Precio</label>
+      <input name="ticket_precio" type="number" min="0" step="0.01" placeholder="0.00" value="${escapeHtml(values.precio || "")}" required />
+    </div>
+    <div>
+      <label>Stock</label>
+      <input name="ticket_stock" type="number" min="1" step="1" placeholder="100" value="${escapeHtml(values.cantidad_disponible || "")}" required />
+    </div>
+    <button type="button" class="compact-button danger" data-remove-ticket-row>Eliminar</button>
+  `;
+  ticketRows.appendChild(row);
+}
+
+async function getSelectedImageValue(formData) {
+  const file = imageFileInput.files[0];
+
+  if (file) {
+    return readImageAsDataUrl(file);
+  }
+
+  return formData.get("imagen").trim();
+}
+
+function readImageAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) {
+      reject(new Error("Selecciona un archivo de imagen valido."));
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      reject(new Error("La imagen no puede pesar mas de 4 MB."));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(new Error("No se pudo leer la imagen.")));
+    reader.readAsDataURL(file);
+  });
+}
+
+function updateImagePreview(value) {
+  if (!value) {
+    imagePreview.hidden = true;
+    imagePreview.removeAttribute("src");
+    return;
+  }
+
+  imagePreview.src = value;
+  imagePreview.hidden = false;
+}
+
+function handleImageFileChange() {
+  const file = imageFileInput.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  readImageAsDataUrl(file)
+    .then((dataUrl) => {
+      form.elements.imagen.value = "";
+      updateImagePreview(dataUrl);
+    })
+    .catch((error) => {
+      imageFileInput.value = "";
+      showMessage(`Error: ${error.message}`, true);
+    });
+}
+
+function getTicketTypePayload() {
+  return Array.from(ticketRows.querySelectorAll(".ticket-inline-row"))
+    .map((row) => ({
+      tipo: row.querySelector('[name="ticket_tipo"]').value.trim(),
+      precio: row.querySelector('[name="ticket_precio"]').value,
+      cantidad_disponible: row.querySelector('[name="ticket_stock"]').value,
+    }))
+    .filter(
+      (ticketType) =>
+        ticketType.tipo &&
+        Number(ticketType.precio) >= 0 &&
+        Number(ticketType.cantidad_disponible) > 0
+    );
+}
+
+function handleTicketRowsClick(event) {
+  if (!Object.prototype.hasOwnProperty.call(event.target.dataset, "removeTicketRow")) {
+    return;
+  }
+
+  const row = event.target.closest(".ticket-inline-row");
+
+  if (ticketRows.children.length === 1) {
+    row.querySelectorAll("input").forEach((input) => {
+      input.value = "";
+    });
+    return;
+  }
+
+  row.remove();
+}
+
 function showMessage(message, isError) {
   messageBox.hidden = false;
-  messageBox.textContent = message;
+  messageBox.textContent = message || "Ocurrio un error inesperado.";
   messageBox.classList.toggle("error", isError);
+  messageBox.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function setSubmitState(isSaving) {
+  submitButton.disabled = isSaving;
+  submitButton.textContent = isSaving ? "Guardando..." : form.elements.id.value ? "Actualizar evento" : "Guardar evento";
+}
+
+async function readJsonResponse(response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error("El servidor respondio con un formato inesperado. Revisa si la sesion sigue activa.");
+  }
 }
 
 function formatDate(value) {
@@ -158,4 +365,9 @@ function escapeHtml(value) {
 form.addEventListener("submit", handleSubmit);
 eventsList.addEventListener("click", handleListClick);
 resetButton.addEventListener("click", resetForm);
+addTicketRowButton.addEventListener("click", () => addTicketRow());
+ticketRows.addEventListener("click", handleTicketRowsClick);
+imageFileInput.addEventListener("change", handleImageFileChange);
+form.elements.imagen.addEventListener("input", (event) => updateImagePreview(event.target.value.trim()));
+renderDefaultTicketRows();
 loadEvents();

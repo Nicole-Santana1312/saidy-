@@ -39,11 +39,12 @@ async function renderTicketTypesPage(req, res) {
               <select id="evento_id" name="evento_id" required data-event-select></select>
 
               <label for="tipo">Tipo</label>
-              <select id="tipo" name="tipo" required>
-                <option value="General">General</option>
-                <option value="VIP">VIP</option>
-                <option value="Preferencial">Preferencial</option>
-              </select>
+              <input id="tipo" name="tipo" type="text" maxlength="60" list="tipos-sugeridos" placeholder="General, VIP, Platinum" required />
+              <datalist id="tipos-sugeridos">
+                <option value="General"></option>
+                <option value="VIP"></option>
+                <option value="Platinum"></option>
+              </datalist>
 
               <label for="precio">Precio</label>
               <input id="precio" name="precio" type="number" min="0" step="0.01" required />

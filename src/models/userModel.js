@@ -1,41 +1,53 @@
-const { getDatabase } = require("../config/database");
+const { getSupabase } = require("../config/database");
 
 async function listUsers(search) {
-  const db = await getDatabase();
-  const params = [];
-  let where = "";
+  const supabase = getSupabase();
+
+  let query = supabase
+    .from("usuarios_app")
+    .select("id, nombre, email, telefono, foto, is_verified, creado_en, actualizado_en");
 
   if (search) {
-    where = "WHERE nombre LIKE ? OR email LIKE ?";
-    params.push(`%${search}%`, `%${search}%`);
+    query = query.or(`nombre.ilike.%${search}%,email.ilike.%${search}%`);
   }
 
-  // Consulta SQL con busqueda por nombre o correo electronico.
-  return db.all(
-    `SELECT id, nombre, email, telefono, creado_en
-     FROM usuarios
-     ${where}
-     ORDER BY creado_en DESC, id DESC`,
-    params
-  );
+  const { data, error } = await query
+    .order("creado_en", { ascending: false })
+    .order("id", { ascending: false });
+
+  if (error) {
+    throw new Error(`Error listing users: ${error.message}`);
+  }
+
+  return data || [];
 }
 
 async function findUserById(id) {
-  const db = await getDatabase();
+  const supabase = getSupabase();
 
-  return db.get(
-    `SELECT id, nombre, email, telefono, creado_en
-     FROM usuarios
-     WHERE id = ?`,
-    id
-  );
+  const { data, error } = await supabase
+    .from("usuarios_app")
+    .select("id, nombre, email, telefono, foto, is_verified, creado_en, actualizado_en")
+    .eq("id", id)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`Error finding user: ${error.message}`);
+  }
+
+  return data || null;
 }
 
 async function deleteUser(id) {
-  const db = await getDatabase();
-  const result = await db.run("DELETE FROM usuarios WHERE id = ?", id);
+  const supabase = getSupabase();
 
-  return result.changes > 0;
+  const { error } = await supabase.from("usuarios_app").delete().eq("id", id);
+
+  if (error) {
+    throw new Error(`Error deleting user: ${error.message}`);
+  }
+
+  return true;
 }
 
 module.exports = {

@@ -1,42 +1,55 @@
-# Eventix - Sistema de autenticacion de administrador
+# Eventix - Sistema Completo de Gestión de Eventos y Boletas
 
-Backend con Node.js y Express que incluye login con email y contrasena, bcrypt, JWT, validacion, manejo de errores y rutas protegidas solo para administrador.
+🎟️ Sistema backend con Node.js y Express para venta de boletas, eventos, y gestión administrativa. Con autenticación segura, panel de admin y app de usuarios.
 
-## Instalacion
+## 🚀 INICIO RÁPIDO
 
+### 1️⃣ Clonar e Instalar
 ```bash
+git clone [tu-repo]
+cd saidy-
 npm install
 ```
 
-## Variables de entorno
+### 2️⃣ Configurar Supabase (IMPORTANTE)
+⚠️ **ANTES DE INICIAR, NECESITAS SUPABASE**
 
-Copia `.env.example` como `.env` y ajusta los valores:
+[Ver guía completa en SUPABASE_SETUP_GUIDE.md](./SUPABASE_SETUP_GUIDE.md)
 
+Resumen rápido:
+1. Crea cuenta en https://supabase.com
+2. Crea nuevo proyecto
+3. Copia el script `SUPABASE_SETUP.sql` en SQL Editor de Supabase
+4. Obtén las credenciales de Settings → API
+
+### 3️⃣ Configurar Variables de Entorno
 ```bash
-PORT=3000
-JWT_SECRET=coloca_aqui_un_secreto_largo_y_seguro
-ADMIN_EMAIL=admin@example.com
-ADMIN_PASSWORD=Admin12345!
+cp .env.example .env
 ```
 
-## Ejecutar
+Edita `.env` y reemplaza:
+```ini
+SUPABASE_URL=https://tuproyecto.supabase.co
+SUPABASE_ANON_KEY=eyJhbGc...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGc...
+```
 
+### 4️⃣ Ejecutar Servidor
 ```bash
 npm run dev
 ```
 
-Luego abre:
+Abre: http://localhost:3000
 
-```text
-http://localhost:3000/login
-```
+---
 
-Credenciales por defecto:
+## 🎯 MÓDULOS DEL SISTEMA
 
-```text
-Email: admin@example.com
-Contrasena: Admin12345!
-```
+### 👨‍💼 PANEL DE ADMINISTRADOR
+
+**Acceso**: http://localhost:3000/login
+**Email**: admin@example.com
+**Contraseña**: Admin12345!
 
 ## Rutas principales
 

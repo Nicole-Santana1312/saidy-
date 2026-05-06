@@ -1,96 +1,50 @@
-const path = require("path");
-const fs = require("fs");
-const sqlite3 = require("sqlite3");
-const { open } = require("sqlite");
+const { createClient } = require("@supabase/supabase-js");
+const env = require("./env");
 
-let database;
+let supabase = null;
 
-async function getDatabase() {
-  if (!database) {
-    const dataDir = path.join(__dirname, "..", "..", "data");
-    fs.mkdirSync(dataDir, { recursive: true });
+function getSupabase() {
+  if (!supabase) {
+    if (!env.supabaseUrl || (!env.supabaseServiceKey && !env.supabaseKey)) {
+      const error = new Error(
+        "Supabase credentials not configured. Please add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to .env"
+      );
+      error.status = 503;
+      throw error;
+    }
 
-    database = await open({
-      filename: path.join(dataDir, "boletas.sqlite"),
-      driver: sqlite3.Database,
+    if (env.supabaseUrl.includes("/rest/v1")) {
+      const error = new Error(
+        "SUPABASE_URL debe ser la URL base del proyecto, sin /rest/v1/. Ejemplo: https://tu-proyecto.supabase.co"
+      );
+      error.status = 503;
+      throw error;
+    }
+
+    supabase = createClient(env.supabaseUrl, env.supabaseServiceKey || env.supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      },
     });
   }
 
-  return database;
+  return supabase;
+}
+
+// Alias for backward compatibility
+function getDatabase() {
+  return getSupabase();
 }
 
 async function initializeDatabase() {
-  const db = await getDatabase();
-  await db.exec("PRAGMA foreign_keys = ON;");
-
-  // La tabla guarda los datos principales de cada evento del sistema.
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS eventos (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      fecha TEXT NOT NULL,
-      lugar TEXT NOT NULL,
-      descripcion TEXT NOT NULL,
-      imagen TEXT NOT NULL,
-      creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      actualizado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS tipos_boletas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      evento_id INTEGER NOT NULL,
-      tipo TEXT NOT NULL CHECK (tipo IN ('General', 'VIP', 'Preferencial')),
-      precio REAL NOT NULL CHECK (precio >= 0),
-      cantidad_disponible INTEGER NOT NULL CHECK (cantidad_disponible >= 0),
-      creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      actualizado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (evento_id) REFERENCES eventos(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS ventas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      usuario TEXT NOT NULL,
-      tipo_boleta_id INTEGER NOT NULL,
-      cantidad INTEGER NOT NULL CHECK (cantidad > 0),
-      total REAL NOT NULL CHECK (total >= 0),
-      fecha_compra TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (tipo_boleta_id) REFERENCES tipos_boletas(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      telefono TEXT,
-      creado_en TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // Usuarios iniciales para que el modulo tenga datos visibles al arrancar.
-  await db.run(
-    `INSERT OR IGNORE INTO usuarios (nombre, email, telefono)
-     VALUES (?, ?, ?)`,
-    "Laura Mendez",
-    "laura@example.com",
-    "809-555-0101"
-  );
-  await db.run(
-    `INSERT OR IGNORE INTO usuarios (nombre, email, telefono)
-     VALUES (?, ?, ?)`,
-    "Carlos Perez",
-    "carlos@example.com",
-    "809-555-0102"
-  );
-  await db.run(
-    `INSERT OR IGNORE INTO usuarios (nombre, email, telefono)
-     VALUES (?, ?, ?)`,
-    "Ana Rodriguez",
-    "ana@example.com",
-    "809-555-0103"
-  );
+  // With Supabase, database initialization is handled through the Supabase dashboard
+  // This function is kept for backward compatibility
+  console.log("Database is ready with Supabase.");
 }
 
 module.exports = {
+  getSupabase,
   getDatabase,
   initializeDatabase,
 };

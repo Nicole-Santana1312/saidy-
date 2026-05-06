@@ -1,34 +1,41 @@
-const { getDatabase } = require("../config/database");
+const { getSupabase } = require("../config/database");
 
 async function getRevenueByEvent() {
-  const db = await getDatabase();
+  const supabase = getSupabase();
 
-  // Reporte SQL agrupado por evento con ingresos y boletas vendidas.
-  return db.all(`
-    SELECT e.id AS evento_id,
-           e.nombre AS evento_nombre,
-           e.fecha AS evento_fecha,
-           e.lugar AS evento_lugar,
-           COALESCE(SUM(v.total), 0) AS ingresos,
-           COALESCE(SUM(v.cantidad), 0) AS boletas_vendidas,
-           COUNT(v.id) AS total_ventas
-    FROM eventos e
-    LEFT JOIN tipos_boletas tb ON tb.evento_id = e.id
-    LEFT JOIN ventas v ON v.tipo_boleta_id = tb.id
-    GROUP BY e.id, e.nombre, e.fecha, e.lugar
-    ORDER BY ingresos DESC, boletas_vendidas DESC, e.fecha ASC
-  `);
+  const { data, error } = await supabase
+    .from("reportes_por_evento")
+    .select("*")
+    .order("ingresos", { ascending: false })
+    .order("boletas_vendidas", { ascending: false })
+    .order("evento_fecha", { ascending: true });
+
+  if (error) {
+    throw new Error(`Error getting revenue by event: ${error.message}`);
+  }
+
+  return data || [];
 }
 
 async function getReportSummary() {
-  const db = await getDatabase();
+  const supabase = getSupabase();
 
-  return db.get(`
-    SELECT COALESCE(SUM(total), 0) AS ingresos_totales,
-           COALESCE(SUM(cantidad), 0) AS boletas_vendidas,
-           COUNT(id) AS total_ventas
-    FROM ventas
-  `);
+  const { data: sales, error } = await supabase.from("ventas").select("total, cantidad");
+
+  if (error) {
+    throw new Error(`Error getting report summary: ${error.message}`);
+  }
+
+  const summary = (sales || []).reduce(
+    (acc, sale) => ({
+      ingresos_totales: acc.ingresos_totales + Number(sale.total),
+      boletas_vendidas: acc.boletas_vendidas + Number(sale.cantidad),
+      total_ventas: acc.total_ventas + 1,
+    }),
+    { ingresos_totales: 0, boletas_vendidas: 0, total_ventas: 0 }
+  );
+
+  return summary;
 }
 
 module.exports = {

@@ -10,11 +10,21 @@ const ticketFormTitle = document.querySelector("#ticket-form-title");
 let events = [];
 
 async function loadEventsForTickets() {
-  const response = await fetch("/api/eventos", {
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
-  events = data.events || [];
+  try {
+    const response = await fetch("/api/eventos", {
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
+
+    if (!response.ok) {
+      throw new Error(data.message || "No se pudieron cargar los eventos.");
+    }
+
+    events = data.events || [];
+  } catch (error) {
+    showTicketMessage(`Error: ${error.message}`, true);
+    events = [];
+  }
 
   renderEventOptions();
 
@@ -48,12 +58,20 @@ async function loadTicketTypes(eventId) {
     return;
   }
 
-  const response = await fetch(`/api/eventos/${eventId}/boletas`, {
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
+  try {
+    const response = await fetch(`/api/eventos/${eventId}/boletas`, {
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
 
-  renderTicketTypes(data.ticketTypes || []);
+    if (!response.ok) {
+      throw new Error(data.message || "No se pudieron cargar las boletas.");
+    }
+
+    renderTicketTypes(data.ticketTypes || []);
+  } catch (error) {
+    ticketList.innerHTML = `<p class="empty-state">Error: ${escapeHtml(error.message)}</p>`;
+  }
 }
 
 function renderTicketTypes(ticketTypes) {
@@ -82,6 +100,10 @@ function renderTicketTypeCard(ticketType) {
           <dt>Disponibles</dt>
           <dd>${Number(ticketType.cantidad_disponible).toLocaleString("es-DO")}</dd>
         </div>
+        <div>
+          <dt>Vendidas</dt>
+          <dd>${Number(ticketType.cantidad_vendida || 0).toLocaleString("es-DO")}</dd>
+        </div>
       </dl>
       <div class="event-card-actions">
         <button type="button" class="compact-button" data-ticket-edit="${ticketType.id}">Editar</button>
@@ -93,34 +115,41 @@ function renderTicketTypeCard(ticketType) {
 
 async function handleTicketSubmit(event) {
   event.preventDefault();
+  setTicketSubmitState(true);
 
-  const formData = new FormData(ticketForm);
-  const id = formData.get("id");
-  const payload = {
-    evento_id: formData.get("evento_id"),
-    tipo: formData.get("tipo"),
-    precio: formData.get("precio"),
-    cantidad_disponible: formData.get("cantidad_disponible"),
-  };
+  try {
+    const formData = new FormData(ticketForm);
+    const id = formData.get("id");
+    const payload = {
+      evento_id: formData.get("evento_id"),
+      tipo: formData.get("tipo"),
+      precio: formData.get("precio"),
+      cantidad_disponible: formData.get("cantidad_disponible"),
+    };
 
-  const url = id ? `/api/boletas/${id}` : "/api/boletas";
-  const method = id ? "PUT" : "POST";
-  const response = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
+    const url = id ? `/api/boletas/${id}` : "/api/boletas";
+    const method = id ? "PUT" : "POST";
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await readJsonResponse(response);
 
-  if (!response.ok) {
-    showTicketMessage(data.errors ? data.errors.join(" ") : data.message, true);
-    return;
+    if (!response.ok) {
+      showTicketMessage(data.errors ? data.errors.join(" ") : data.message, true);
+      return;
+    }
+
+    showTicketMessage(data.message, false);
+    eventFilter.value = payload.evento_id;
+    resetTicketForm();
+    await loadTicketTypes(eventFilter.value);
+  } catch (error) {
+    showTicketMessage(`Error: ${error.message}`, true);
+  } finally {
+    setTicketSubmitState(false);
   }
-
-  showTicketMessage(data.message, false);
-  eventFilter.value = payload.evento_id;
-  resetTicketForm();
-  await loadTicketTypes(eventFilter.value);
 }
 
 async function handleTicketListClick(event) {
@@ -137,25 +166,29 @@ async function handleTicketListClick(event) {
 }
 
 async function fillTicketFormForEdit(id) {
-  const response = await fetch(`/api/boletas/${id}`, {
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
+  try {
+    const response = await fetch(`/api/boletas/${id}`, {
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
 
-  if (!response.ok) {
-    showTicketMessage(data.message, true);
-    return;
+    if (!response.ok) {
+      showTicketMessage(data.message, true);
+      return;
+    }
+
+    ticketForm.elements.id.value = data.ticketType.id;
+    ticketForm.elements.evento_id.value = data.ticketType.evento_id;
+    ticketForm.elements.tipo.value = data.ticketType.tipo;
+    ticketForm.elements.precio.value = data.ticketType.precio;
+    ticketForm.elements.cantidad_disponible.value =
+      data.ticketType.cantidad_disponible;
+    ticketSubmitButton.textContent = "Actualizar boleta";
+    ticketFormTitle.textContent = "Editar tipo de boleta";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (error) {
+    showTicketMessage(`Error: ${error.message}`, true);
   }
-
-  ticketForm.elements.id.value = data.ticketType.id;
-  ticketForm.elements.evento_id.value = data.ticketType.evento_id;
-  ticketForm.elements.tipo.value = data.ticketType.tipo;
-  ticketForm.elements.precio.value = data.ticketType.precio;
-  ticketForm.elements.cantidad_disponible.value =
-    data.ticketType.cantidad_disponible;
-  ticketSubmitButton.textContent = "Actualizar boleta";
-  ticketFormTitle.textContent = "Editar tipo de boleta";
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function removeTicketType(id) {
@@ -165,14 +198,18 @@ async function removeTicketType(id) {
     return;
   }
 
-  const response = await fetch(`/api/boletas/${id}`, {
-    method: "DELETE",
-    headers: { Accept: "application/json" },
-  });
-  const data = await response.json();
+  try {
+    const response = await fetch(`/api/boletas/${id}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    });
+    const data = await readJsonResponse(response);
 
-  showTicketMessage(data.message, !response.ok);
-  await loadTicketTypes(eventFilter.value);
+    showTicketMessage(data.message, !response.ok);
+    await loadTicketTypes(eventFilter.value);
+  } catch (error) {
+    showTicketMessage(`Error: ${error.message}`, true);
+  }
 }
 
 function resetTicketForm() {
@@ -186,8 +223,32 @@ function resetTicketForm() {
 
 function showTicketMessage(message, isError) {
   ticketMessage.hidden = false;
-  ticketMessage.textContent = message;
+  ticketMessage.textContent = message || "Ocurrio un error inesperado.";
   ticketMessage.classList.toggle("error", isError);
+  ticketMessage.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function setTicketSubmitState(isSaving) {
+  ticketSubmitButton.disabled = isSaving;
+  ticketSubmitButton.textContent = isSaving
+    ? "Guardando..."
+    : ticketForm.elements.id.value
+      ? "Actualizar boleta"
+      : "Guardar boleta";
+}
+
+async function readJsonResponse(response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error("El servidor respondio con un formato inesperado. Revisa si la sesion sigue activa.");
+  }
 }
 
 function formatCurrency(value) {

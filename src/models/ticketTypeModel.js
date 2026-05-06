@@ -1,92 +1,147 @@
-const { getDatabase } = require("../config/database");
+const { getSupabase } = require("../config/database");
 
 async function listTicketTypesByEvent(eventId) {
-  const db = await getDatabase();
+  const supabase = getSupabase();
 
-  return db.all(
-    `SELECT tb.id,
-            tb.evento_id,
-            tb.tipo,
-            tb.precio,
-            tb.cantidad_disponible,
-            tb.creado_en,
-            tb.actualizado_en,
-            e.nombre AS evento_nombre
-     FROM tipos_boletas tb
-     INNER JOIN eventos e ON e.id = tb.evento_id
-     WHERE tb.evento_id = ?
-     ORDER BY CASE tb.tipo
-       WHEN 'General' THEN 1
-       WHEN 'Preferencial' THEN 2
-       WHEN 'VIP' THEN 3
-       ELSE 4
-     END`,
-    eventId
-  );
+  const { data, error } = await supabase
+    .from("tipos_boletas")
+    .select(
+      `id,
+       evento_id,
+       tipo,
+       precio,
+       cantidad_disponible,
+       creado_en,
+       actualizado_en,
+       eventos(nombre)`
+    )
+    .eq("evento_id", eventId)
+    .order("tipo", { ascending: true });
+
+  if (error) {
+    throw new Error(`Error listing ticket types: ${error.message}`);
+  }
+
+  return addSoldCounts((data || []).map((item) => ({
+    ...item,
+    evento_nombre: item.eventos?.nombre,
+  })));
 }
 
 async function findTicketTypeById(id) {
-  const db = await getDatabase();
+  const supabase = getSupabase();
 
-  return db.get(
-    `SELECT tb.id,
-            tb.evento_id,
-            tb.tipo,
-            tb.precio,
-            tb.cantidad_disponible,
-            tb.creado_en,
-            tb.actualizado_en,
-            e.nombre AS evento_nombre
-     FROM tipos_boletas tb
-     INNER JOIN eventos e ON e.id = tb.evento_id
-     WHERE tb.id = ?`,
-    id
-  );
+  const { data, error } = await supabase
+    .from("tipos_boletas")
+    .select(
+      `id,
+       evento_id,
+       tipo,
+       precio,
+       cantidad_disponible,
+       creado_en,
+       actualizado_en,
+       eventos(nombre)`
+    )
+    .eq("id", id)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw new Error(`Error finding ticket type: ${error.message}`);
+  }
+
+  if (!data) return null;
+
+  return {
+    ...data,
+    evento_nombre: data.eventos?.nombre,
+    cantidad_vendida: await countSoldTicketsByType(id),
+  };
 }
 
 async function createTicketType(ticketData) {
-  const db = await getDatabase();
-  const result = await db.run(
-    `INSERT INTO tipos_boletas (evento_id, tipo, precio, cantidad_disponible)
-     VALUES (?, ?, ?, ?)`,
-    ticketData.evento_id,
-    ticketData.tipo,
-    ticketData.precio,
-    ticketData.cantidad_disponible
-  );
+  const supabase = getSupabase();
 
-  return findTicketTypeById(result.lastID);
+  const { data, error } = await supabase
+    .from("tipos_boletas")
+    .insert([
+      {
+        evento_id: ticketData.evento_id,
+        tipo: ticketData.tipo,
+        precio: ticketData.precio,
+        cantidad_disponible: ticketData.cantidad_disponible,
+      },
+    ])
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error(`Error creating ticket type: ${error.message}`);
+  }
+
+  return findTicketTypeById(data.id);
 }
 
 async function updateTicketType(id, ticketData) {
-  const db = await getDatabase();
-  const result = await db.run(
-    `UPDATE tipos_boletas
-     SET evento_id = ?,
-         tipo = ?,
-         precio = ?,
-         cantidad_disponible = ?,
-         actualizado_en = CURRENT_TIMESTAMP
-     WHERE id = ?`,
-    ticketData.evento_id,
-    ticketData.tipo,
-    ticketData.precio,
-    ticketData.cantidad_disponible,
-    id
-  );
+  const supabase = getSupabase();
 
-  if (result.changes === 0) {
-    return null;
+  const { error } = await supabase
+    .from("tipos_boletas")
+    .update({
+      evento_id: ticketData.evento_id,
+      tipo: ticketData.tipo,
+      precio: ticketData.precio,
+      cantidad_disponible: ticketData.cantidad_disponible,
+      actualizado_en: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`Error updating ticket type: ${error.message}`);
   }
 
   return findTicketTypeById(id);
 }
 
 async function deleteTicketType(id) {
-  const db = await getDatabase();
-  const result = await db.run("DELETE FROM tipos_boletas WHERE id = ?", id);
+  const supabase = getSupabase();
 
-  return result.changes > 0;
+  const { error } = await supabase.from("tipos_boletas").delete().eq("id", id);
+
+  if (error) {
+    throw new Error(`Error deleting ticket type: ${error.message}`);
+  }
+
+  return true;
+}
+
+async function addSoldCounts(ticketTypes) {
+  return Promise.all(
+    ticketTypes.map(async (ticketType) => ({
+      ...ticketType,
+      cantidad_vendida: await countSoldTicketsByType(ticketType.id),
+    }))
+  );
+}
+
+async function countSoldTicketsByType(ticketTypeId) {
+  const supabase = getSupabase();
+
+  const { count, error } = await supabase
+    .from("boletos")
+    .select("id", { count: "exact", head: true })
+    .eq("tipo_boleta_id", ticketTypeId)
+    .neq("estado", "cancelado");
+
+  if (error && /does not exist|schema cache/i.test(error.message || "")) {
+    return 0;
+  }
+
+  if (error) {
+    throw new Error(`Error counting sold tickets: ${error.message}`);
+  }
+
+  return count || 0;
 }
 
 module.exports = {

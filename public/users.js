@@ -38,7 +38,7 @@ function renderUserRow(user) {
       <td><strong>${escapeHtml(user.nombre)}</strong></td>
       <td>${escapeHtml(user.email)}</td>
       <td>${escapeHtml(user.telefono || "Sin telefono")}</td>
-      <td>${formatDate(user.creado_en)}</td>
+      <td>${user.is_verified ? "Verificado" : "Pendiente"}</td>
       <td>
         <div class="table-actions">
           <button type="button" class="compact-button" data-user-detail-id="${user.id}">Ver detalle</button>
@@ -94,6 +94,10 @@ async function showUserDetail(id) {
       <div>
         <dt>Fecha de registro</dt>
         <dd>${formatDate(data.user.creado_en)}</dd>
+      </div>
+      <div>
+        <dt>Estado</dt>
+        <dd>${data.user.is_verified ? "Verificado" : "Pendiente de verificacion"}</dd>
       </div>
     </dl>
   `;

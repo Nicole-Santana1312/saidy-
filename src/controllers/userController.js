@@ -43,7 +43,7 @@ async function renderUsersPage(req, res) {
                       <th>Nombre</th>
                       <th>Email</th>
                       <th>Telefono</th>
-                      <th>Registro</th>
+                      <th>Estado</th>
                       <th>Acciones</th>
                     </tr>
                   </thead>

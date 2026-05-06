@@ -60,13 +60,13 @@ function renderLogin(req, res) {
 async function login(req, res, next) {
   try {
     const { email, password } = req.body;
-    const admin = findAdminByEmail(email);
+    const admin = await findAdminByEmail(email);
 
     if (!admin) {
       return invalidCredentials(req, res);
     }
 
-    const passwordIsValid = await bcrypt.compare(password, admin.passwordHash);
+    const passwordIsValid = await bcrypt.compare(password, admin.password_hash);
 
     if (!passwordIsValid) {
       return invalidCredentials(req, res);
