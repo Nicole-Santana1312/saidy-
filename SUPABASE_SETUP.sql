@@ -127,6 +127,10 @@ CREATE TABLE IF NOT EXISTS compras (
   tipo_boleta_id UUID NOT NULL REFERENCES tipos_boletas(id) ON DELETE CASCADE,
   cantidad INTEGER NOT NULL CHECK (cantidad > 0),
   total DECIMAL(12, 2) NOT NULL CHECK (total >= 0),
+  metodo_pago TEXT NOT NULL DEFAULT 'tarjeta',
+  estado_pago TEXT NOT NULL DEFAULT 'pagado' CHECK (estado_pago IN ('pendiente', 'pagado', 'rechazado')),
+  referencia_pago TEXT,
+  pago_ultimos4 TEXT,
   estado TEXT NOT NULL DEFAULT 'completada' CHECK (estado IN ('pendiente', 'completada', 'cancelada')),
   fecha_compra TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
@@ -134,6 +138,7 @@ CREATE TABLE IF NOT EXISTS compras (
 CREATE INDEX IF NOT EXISTS idx_compras_usuario ON compras(usuario_app_id);
 CREATE INDEX IF NOT EXISTS idx_compras_tipo_boleta ON compras(tipo_boleta_id);
 CREATE INDEX IF NOT EXISTS idx_compras_estado ON compras(estado);
+CREATE INDEX IF NOT EXISTS idx_compras_estado_pago ON compras(estado_pago);
 
 -- ============================================================================
 -- BOLETOS TABLE
@@ -173,7 +178,7 @@ SELECT
   COUNT(c.id) AS total_ventas
 FROM eventos e
 LEFT JOIN tipos_boletas tb ON tb.evento_id = e.id
-LEFT JOIN compras c ON c.tipo_boleta_id = tb.id AND c.estado = 'completada'
+LEFT JOIN compras c ON c.tipo_boleta_id = tb.id AND c.estado = 'completada' AND c.estado_pago = 'pagado'
 GROUP BY e.id, e.nombre, e.fecha, e.lugar
 ORDER BY ingresos DESC, boletas_vendidas DESC, e.fecha ASC;
 

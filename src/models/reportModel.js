@@ -20,16 +20,32 @@ async function getRevenueByEvent() {
 async function getReportSummary() {
   const supabase = getSupabase();
 
-  const { data: sales, error } = await supabase.from("ventas").select("total, cantidad");
+  const [
+    { data: purchases, error: purchaseError },
+    { data: sales, error: salesError },
+  ] = await Promise.all([
+    supabase
+      .from("compras")
+      .select("total, cantidad")
+      .eq("estado", "completada")
+      .eq("estado_pago", "pagado"),
+    supabase.from("ventas").select("total, cantidad"),
+  ]);
 
-  if (error) {
-    throw new Error(`Error getting report summary: ${error.message}`);
+  if (purchaseError) {
+    throw new Error(`Error getting purchase report summary: ${purchaseError.message}`);
   }
 
-  const summary = (sales || []).reduce(
-    (acc, sale) => ({
-      ingresos_totales: acc.ingresos_totales + Number(sale.total),
-      boletas_vendidas: acc.boletas_vendidas + Number(sale.cantidad),
+  if (salesError) {
+    throw new Error(`Error getting sales report summary: ${salesError.message}`);
+  }
+
+  const completedSales = [...(purchases || []), ...(sales || [])];
+
+  const summary = completedSales.reduce(
+    (acc, item) => ({
+      ingresos_totales: acc.ingresos_totales + Number(item.total),
+      boletas_vendidas: acc.boletas_vendidas + Number(item.cantidad),
       total_ventas: acc.total_ventas + 1,
     }),
     { ingresos_totales: 0, boletas_vendidas: 0, total_ventas: 0 }

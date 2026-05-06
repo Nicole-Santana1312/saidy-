@@ -179,6 +179,32 @@ function renderEventDetailPage(req, res) {
                   Precio total: <span id="total-price">RD$ 0.00</span>
                 </div>
 
+                <fieldset class="payment-fieldset">
+                  <legend>Datos de pago</legend>
+
+                  <label for="payment-method">Metodo de pago</label>
+                  <select id="payment-method" name="payment_method" required>
+                    <option value="tarjeta">Tarjeta de credito o debito</option>
+                  </select>
+
+                  <label for="cardholder-name">Nombre del titular</label>
+                  <input id="cardholder-name" name="cardholder_name" type="text" autocomplete="cc-name" required />
+
+                  <label for="card-number">Numero de tarjeta</label>
+                  <input id="card-number" name="card_number" type="text" inputmode="numeric" autocomplete="cc-number" maxlength="23" placeholder="4242 4242 4242 4242" required />
+
+                  <div class="payment-grid">
+                    <div>
+                      <label for="card-expiry">Expiracion</label>
+                      <input id="card-expiry" name="card_expiry" type="text" inputmode="numeric" autocomplete="cc-exp" maxlength="5" placeholder="MM/AA" required />
+                    </div>
+                    <div>
+                      <label for="card-cvv">CVV</label>
+                      <input id="card-cvv" name="card_cvv" type="password" inputmode="numeric" autocomplete="cc-csc" maxlength="4" required />
+                    </div>
+                  </div>
+                </fieldset>
+
                 <button type="submit" class="primary-button">Comprar boletas</button>
               </form>
             </section>

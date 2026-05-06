@@ -30,9 +30,10 @@ async function loadPurchases() {
         <div class="purchase-details">
           <p><strong>Tipo:</strong> ${escapeHtml(purchase.tipo_boleta)}</p>
           <p><strong>Cantidad:</strong> ${purchase.cantidad} boleta(s)</p>
-          <p><strong>Total:</strong> RD$ ${purchase.total.toFixed(2)}</p>
+          <p><strong>Total:</strong> RD$ ${Number(purchase.total).toFixed(2)}</p>
           <p><strong>Fecha:</strong> ${formatDate(purchase.fecha_compra)}</p>
           <p><strong>Estado:</strong> <span class="badge">${purchase.estado}</span></p>
+          <p><strong>Pago:</strong> ${formatPayment(purchase)}</p>
         </div>
       </article>
     `
@@ -41,6 +42,23 @@ async function loadPurchases() {
   } catch (error) {
     container.innerHTML = `<p class="error">Error: ${escapeHtml(error.message)}</p>`;
   }
+}
+
+function formatPayment(purchase) {
+  if (!purchase.metodo_pago) {
+    return "No registrado";
+  }
+
+  const last4 = purchase.pago_ultimos4 ? ` **** ${escapeHtml(purchase.pago_ultimos4)}` : "";
+  return `${escapeHtml(formatPaymentMethod(purchase.metodo_pago))}${last4} - ${escapeHtml(purchase.estado_pago || "pendiente")}`;
+}
+
+function formatPaymentMethod(value) {
+  const labels = {
+    tarjeta: "Tarjeta",
+  };
+
+  return labels[value] || value;
 }
 
 function formatDate(dateString) {

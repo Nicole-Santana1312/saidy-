@@ -2,33 +2,40 @@ const { getSupabase } = require("../config/database");
 
 async function listSales(eventId) {
   const supabase = getSupabase();
+  const ticketIds = await getTicketTypeIdsForEvent(supabase, eventId);
 
+  if (eventId && ticketIds.length === 0) {
+    return [];
+  }
+
+  const [manualSales, userPurchases] = await Promise.all([
+    listManualSales(supabase, ticketIds),
+    listCompletedPurchases(supabase, ticketIds),
+  ]);
+
+  return [...manualSales, ...userPurchases].sort((a, b) => {
+    const dateA = new Date(a.fecha_compra).getTime();
+    const dateB = new Date(b.fecha_compra).getTime();
+
+    if (dateA !== dateB) {
+      return dateB - dateA;
+    }
+
+    return String(b.id).localeCompare(String(a.id));
+  });
+}
+
+async function listManualSales(supabase, ticketIds) {
   let query = supabase.from("ventas").select(
     `id,
      usuario,
      cantidad,
      total,
      fecha_compra,
-     tipos_boletas(id, tipo, precio),
-     eventos:tipos_boletas(evento_id, eventos(id, nombre, fecha, lugar))`
+     tipos_boletas(id, tipo, precio, evento_id, eventos(id, nombre, fecha, lugar))`
   );
 
-  if (eventId) {
-    // This is a bit tricky with Supabase, we'll filter after getting data
-    const { data: ticketTypes, error: ticketError } = await supabase
-      .from("tipos_boletas")
-      .select("id")
-      .eq("evento_id", eventId);
-
-    if (ticketError) {
-      throw new Error(`Error filtering sales: ${ticketError.message}`);
-    }
-
-    const ticketIds = ticketTypes.map((t) => t.id);
-    if (ticketIds.length === 0) {
-      return [];
-    }
-
+  if (ticketIds) {
     query = query.in("tipo_boleta_id", ticketIds);
   }
 
@@ -49,11 +56,90 @@ async function listSales(eventId) {
     tipo_boleta_id: sale.tipos_boletas?.id,
     tipo_boleta: sale.tipos_boletas?.tipo,
     precio: sale.tipos_boletas?.precio,
-    evento_id: sale.eventos?.[0]?.evento_id,
-    evento_nombre: sale.eventos?.[0]?.eventos?.nombre,
-    evento_fecha: sale.eventos?.[0]?.eventos?.fecha,
-    evento_lugar: sale.eventos?.[0]?.eventos?.lugar,
+    evento_id: sale.tipos_boletas?.evento_id,
+    evento_nombre: sale.tipos_boletas?.eventos?.nombre,
+    evento_fecha: sale.tipos_boletas?.eventos?.fecha,
+    evento_lugar: sale.tipos_boletas?.eventos?.lugar,
+    estado: "completada",
+    source: "venta_manual",
   }));
+}
+
+async function listCompletedPurchases(supabase, ticketIds) {
+  let query = supabase
+    .from("compras")
+    .select(
+      `id,
+       usuario_app_id,
+       tipo_boleta_id,
+       cantidad,
+       total,
+       fecha_compra,
+       estado,
+       metodo_pago,
+       estado_pago,
+       referencia_pago,
+       pago_ultimos4,
+       usuarios_app(nombre, email),
+       tipos_boletas(id, tipo, precio, evento_id, eventos(id, nombre, fecha, lugar))`
+    )
+    .eq("estado", "completada")
+    .eq("estado_pago", "pagado");
+
+  if (ticketIds) {
+    query = query.in("tipo_boleta_id", ticketIds);
+  }
+
+  const { data, error } = await query
+    .order("fecha_compra", { ascending: false })
+    .order("id", { ascending: false });
+
+  if (error) {
+    throw new Error(`Error listing purchases as sales: ${error.message}`);
+  }
+
+  return (data || []).map((purchase) => ({
+    id: purchase.id,
+    usuario:
+      purchase.usuarios_app?.nombre ||
+      purchase.usuarios_app?.email ||
+      "Usuario registrado",
+    usuario_email: purchase.usuarios_app?.email,
+    usuario_app_id: purchase.usuario_app_id,
+    cantidad: purchase.cantidad,
+    total: purchase.total,
+    fecha_compra: purchase.fecha_compra,
+    metodo_pago: purchase.metodo_pago,
+    estado_pago: purchase.estado_pago,
+    referencia_pago: purchase.referencia_pago,
+    pago_ultimos4: purchase.pago_ultimos4,
+    tipo_boleta_id: purchase.tipos_boletas?.id || purchase.tipo_boleta_id,
+    tipo_boleta: purchase.tipos_boletas?.tipo,
+    precio: purchase.tipos_boletas?.precio,
+    evento_id: purchase.tipos_boletas?.evento_id,
+    evento_nombre: purchase.tipos_boletas?.eventos?.nombre,
+    evento_fecha: purchase.tipos_boletas?.eventos?.fecha,
+    evento_lugar: purchase.tipos_boletas?.eventos?.lugar,
+    estado: purchase.estado,
+    source: "compra_usuario",
+  }));
+}
+
+async function getTicketTypeIdsForEvent(supabase, eventId) {
+  if (!eventId) {
+    return null;
+  }
+
+  const { data: ticketTypes, error } = await supabase
+    .from("tipos_boletas")
+    .select("id")
+    .eq("evento_id", eventId);
+
+  if (error) {
+    throw new Error(`Error filtering sales: ${error.message}`);
+  }
+
+  return (ticketTypes || []).map((ticketType) => ticketType.id);
 }
 
 async function createSale(saleData) {

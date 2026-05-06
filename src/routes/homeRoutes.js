@@ -576,9 +576,9 @@ router.get("/home", (req, res) => {
                 <span>Eventix</span>
               </a>
               <div class="nav-links">
-                <a href="#servicios">Servicios</a>
+                <a href="#servicios">Comprar</a>
                 <a href="#nosotros">Nosotros</a>
-                <a href="/login">Admin</a>
+                <a href="/login">Acceso admin</a>
                 <a class="nav-action" href="/user/eventos">Ver eventos</a>
               </div>
             </nav>
@@ -586,11 +586,11 @@ router.get("/home", (req, res) => {
 
           <main class="hero">
             <section class="hero-copy">
-              <p class="eyeline">Plataforma de eventos</p>
-              <h1>Vende boletas y controla accesos <span>sin desorden.</span></h1>
+              <p class="eyeline">Boletas para eventos</p>
+              <h1>Encuentra eventos y compra tus boletas <span>en minutos.</span></h1>
               <p class="hero-text">
-                Eventix ayuda a organizadores a publicar eventos, gestionar entradas,
-                vender tickets y validar asistentes desde un sistema claro, moderno y confiable.
+                Eventix es el lugar para ver eventos disponibles, elegir tus entradas
+                y guardar tus boletas en una cuenta personal.
               </p>
               <div class="actions">
                 <a class="button-primary" href="/user/eventos">Comprar boletas</a>
@@ -599,11 +599,11 @@ router.get("/home", (req, res) => {
               <div class="hero-meta" aria-label="Beneficios principales">
                 <div class="meta-item">
                   <strong>QR</strong>
-                  <span>Validacion rapida en la entrada</span>
+                  <span>Boletas listas para presentar</span>
                 </div>
                 <div class="meta-item">
-                  <strong>Panel</strong>
-                  <span>Ventas, usuarios y reportes en un lugar</span>
+                  <strong>Cuenta</strong>
+                  <span>Consulta tus compras cuando quieras</span>
                 </div>
                 <div class="meta-item">
                   <strong>Online</strong>
@@ -617,15 +617,15 @@ router.get("/home", (req, res) => {
                 <div class="event-ticket">
                   <div>
                     <p>Experiencia destacada</p>
-                    <h2>Eventos con entrada mas agil y ventas mejor organizadas.</h2>
+                    <h2>Compra tu entrada y ten tus boletas listas antes de llegar.</h2>
                   </div>
-                  <div class="ticket-code" aria-hidden="true">CHECK-IN</div>
+                  <div class="ticket-code" aria-hidden="true">BOLETA</div>
                 </div>
               </div>
               <div class="media-strip">
                 <div class="strip-card" aria-hidden="true"></div>
                 <div class="strip-card">
-                  <strong>Todo listo antes de abrir las puertas.</strong>
+                  <strong>Tu proximo plan puede empezar aqui.</strong>
                 </div>
               </div>
             </aside>
@@ -635,27 +635,27 @@ router.get("/home", (req, res) => {
         <section id="servicios" class="section">
           <div class="inner">
             <div class="section-heading">
-              <h2>Una operacion completa para tus eventos.</h2>
+              <h2>Todo lo que necesitas para comprar tus boletas.</h2>
               <p>
-                Desde la publicacion hasta la entrada, Eventix organiza el flujo
-                principal para que el equipo trabaje con informacion clara.
+                Explora los eventos publicados, selecciona el tipo de boleta
+                que prefieres y conserva tus entradas en tu perfil.
               </p>
             </div>
             <div class="service-grid">
               <article class="service">
                 <span class="service-number">1</span>
-                <h3>Publicacion y boletas</h3>
-                <p>Crea eventos, configura categorias de tickets y muestra la informacion importante de forma limpia.</p>
+                <h3>Eventos disponibles</h3>
+                <p>Revisa las actividades abiertas al publico con fecha, lugar y detalles importantes.</p>
               </article>
               <article class="service">
                 <span class="service-number">2</span>
-                <h3>Compras para usuarios</h3>
-                <p>Los asistentes pueden crear cuenta, comprar entradas y consultar sus boletas desde su perfil.</p>
+                <h3>Compra de boletas</h3>
+                <p>Elige tu tipo de entrada, confirma la cantidad y completa tu compra desde tu cuenta.</p>
               </article>
               <article class="service">
                 <span class="service-number">3</span>
-                <h3>Control administrativo</h3>
-                <p>Administra ventas, asistentes, reportes y validacion de boletas con una vista de trabajo directa.</p>
+                <h3>Acceso administrativo</h3>
+                <p>Solo el super admin y los administradores pueden crear eventos, configurar boletas y gestionar ventas.</p>
               </article>
             </div>
           </div>
@@ -666,18 +666,17 @@ router.get("/home", (req, res) => {
             <div class="about-image" aria-hidden="true"></div>
             <div class="about-copy">
               <p class="eyeline">Quienes somos</p>
-              <h2>Tecnologia simple para eventos que se sienten profesionales.</h2>
+              <h2>Una forma simple de encontrar tu proxima entrada.</h2>
               <p>
-                Eventix nace para reemplazar procesos manuales, listas confusas y accesos lentos.
-                La plataforma conecta ventas, usuarios y check-in para que cada evento tenga una
-                operacion mas ordenada desde el primer registro.
+                Eventix reune los eventos disponibles en un solo lugar para que puedas
+                comprar boletas sin depender de listas, mensajes sueltos o procesos confusos.
               </p>
               <p>
-                Nuestro objetivo es que el organizador vea lo importante rapido y que el cliente
-                compre sin friccion, con una experiencia sobria, confiable y facil de usar.
+                Para el usuario, la experiencia se concentra en explorar, comprar y consultar
+                sus boletas. La administracion queda reservada para super admins y admins.
               </p>
               <div class="statement">
-                <strong>Menos filas, menos errores y mas control sobre cada boleta vendida.</strong>
+                <strong>Compra facil, boletas organizadas y acceso claro a tus entradas.</strong>
               </div>
             </div>
           </div>
@@ -686,15 +685,15 @@ router.get("/home", (req, res) => {
         <section class="cta-band">
           <div class="inner">
             <div>
-              <h2>Encuentra tu proximo evento o gestiona el tuyo.</h2>
+              <h2>Encuentra tu proximo evento.</h2>
               <p>
-                Compra entradas disponibles, revisa tus boletas o entra al panel administrativo
-                para operar tus eventos.
+                Compra entradas disponibles o revisa las boletas guardadas en tu cuenta.
+                El panel administrativo es solo para super admins y administradores.
               </p>
             </div>
             <div class="actions">
               <a class="button-primary" href="/user/eventos">Ver eventos</a>
-              <a class="button-secondary" href="/login">Panel admin</a>
+              <a class="button-secondary" href="/login">Acceso admin</a>
             </div>
           </div>
         </section>
@@ -702,7 +701,7 @@ router.get("/home", (req, res) => {
         <footer class="footer">
           <div class="inner">
             <strong>Eventix</strong>
-            <span>Gestion profesional de eventos, boletas y acceso.</span>
+            <span>Eventos disponibles y compra de boletas online.</span>
             <a href="/user/eventos">Explorar eventos</a>
           </div>
         </footer>

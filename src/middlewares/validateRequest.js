@@ -11,11 +11,12 @@ function validateRequest(req, res, next) {
   const messages = errors.array().map((error) => error.msg);
 
   if (wantsHtml(req)) {
-    return res.redirect(303, `/login?error=${encodeURIComponent(messages[0])}`);
+    const redirectPath = req.originalUrl.split("?")[0] || req.url;
+    return res.redirect(303, `${redirectPath}?error=${encodeURIComponent(messages[0])}`);
   }
 
   return res.status(400).json({
-    message: "Datos de entrada invalidos.",
+    message: messages[0] || "Datos de entrada invalidos.",
     errors: messages,
   });
 }

@@ -1,5 +1,26 @@
 const { getSupabase } = require("../config/database");
 
+function extractEventInfo(rawEventData) {
+  if (!rawEventData) {
+    return {
+      evento_id: null,
+      evento_nombre: null,
+      evento_fecha: null,
+      evento_lugar: null,
+    };
+  }
+
+  const eventContainer = Array.isArray(rawEventData) ? rawEventData[0] : rawEventData;
+  const eventPayload = eventContainer?.eventos || eventContainer;
+
+  return {
+    evento_id: eventContainer?.evento_id || null,
+    evento_nombre: eventPayload?.nombre || null,
+    evento_fecha: eventPayload?.fecha || null,
+    evento_lugar: eventPayload?.lugar || null,
+  };
+}
+
 async function listPurchasesByUser(usuarioAppId) {
   const supabase = getSupabase();
 
@@ -13,6 +34,10 @@ async function listPurchasesByUser(usuarioAppId) {
        total,
        fecha_compra,
        estado,
+       metodo_pago,
+       estado_pago,
+       referencia_pago,
+       pago_ultimos4,
        tipos_boletas(tipo, precio),
        eventos:tipos_boletas(evento_id, eventos(id, nombre, fecha, lugar))`
     )
@@ -24,21 +49,26 @@ async function listPurchasesByUser(usuarioAppId) {
     throw new Error(`Error listing purchases: ${error.message}`);
   }
 
-  return (data || []).map((purchase) => ({
-    id: purchase.id,
-    usuario_app_id: purchase.usuario_app_id,
-    tipo_boleta_id: purchase.tipo_boleta_id,
-    cantidad: purchase.cantidad,
-    total: purchase.total,
-    fecha_compra: purchase.fecha_compra,
-    estado: purchase.estado,
-    tipo_boleta: purchase.tipos_boletas?.tipo,
-    precio: purchase.tipos_boletas?.precio,
-    evento_id: purchase.eventos?.[0]?.evento_id,
-    evento_nombre: purchase.eventos?.[0]?.eventos?.nombre,
-    evento_fecha: purchase.eventos?.[0]?.eventos?.fecha,
-    evento_lugar: purchase.eventos?.[0]?.eventos?.lugar,
-  }));
+  return (data || []).map((purchase) => {
+    const eventInfo = extractEventInfo(purchase.eventos);
+
+    return {
+      id: purchase.id,
+      usuario_app_id: purchase.usuario_app_id,
+      tipo_boleta_id: purchase.tipo_boleta_id,
+      cantidad: purchase.cantidad,
+      total: purchase.total,
+      fecha_compra: purchase.fecha_compra,
+      estado: purchase.estado,
+      metodo_pago: purchase.metodo_pago,
+      estado_pago: purchase.estado_pago,
+      referencia_pago: purchase.referencia_pago,
+      pago_ultimos4: purchase.pago_ultimos4,
+      tipo_boleta: purchase.tipos_boletas?.tipo,
+      precio: purchase.tipos_boletas?.precio,
+      ...eventInfo,
+    };
+  });
 }
 
 async function getPurchaseById(id, usuarioAppId) {
@@ -54,6 +84,10 @@ async function getPurchaseById(id, usuarioAppId) {
        total,
        fecha_compra,
        estado,
+       metodo_pago,
+       estado_pago,
+       referencia_pago,
+       pago_ultimos4,
        tipos_boletas(tipo, precio),
        eventos:tipos_boletas(evento_id, eventos(id, nombre, fecha, lugar))`
     )
@@ -67,6 +101,8 @@ async function getPurchaseById(id, usuarioAppId) {
 
   if (!data) return null;
 
+  const eventInfo = extractEventInfo(data.eventos);
+
   return {
     id: data.id,
     usuario_app_id: data.usuario_app_id,
@@ -75,12 +111,13 @@ async function getPurchaseById(id, usuarioAppId) {
     total: data.total,
     fecha_compra: data.fecha_compra,
     estado: data.estado,
+    metodo_pago: data.metodo_pago,
+    estado_pago: data.estado_pago,
+    referencia_pago: data.referencia_pago,
+    pago_ultimos4: data.pago_ultimos4,
     tipo_boleta: data.tipos_boletas?.tipo,
     precio: data.tipos_boletas?.precio,
-    evento_id: data.eventos?.[0]?.evento_id,
-    evento_nombre: data.eventos?.[0]?.eventos?.nombre,
-    evento_fecha: data.eventos?.[0]?.eventos?.fecha,
-    evento_lugar: data.eventos?.[0]?.eventos?.lugar,
+    ...eventInfo,
   };
 }
 
@@ -105,6 +142,8 @@ async function createPurchase(usuarioAppId, compraData) {
   }
 
   const total = Number(ticketType.precio) * Number(compraData.cantidad);
+  const paymentReference = generatePaymentReference();
+  const cardNumber = String(compraData.card_number || "").replace(/\D/g, "");
 
   // Create purchase
   const { data: purchaseResult, error: purchaseError } = await supabase
@@ -115,6 +154,10 @@ async function createPurchase(usuarioAppId, compraData) {
         tipo_boleta_id: compraData.tipo_boleta_id,
         cantidad: compraData.cantidad,
         total: total,
+        metodo_pago: "tarjeta",
+        estado_pago: "pagado",
+        referencia_pago: paymentReference,
+        pago_ultimos4: cardNumber.slice(-4),
       },
     ])
     .select("id")
@@ -232,6 +275,10 @@ function generateTicketCode() {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+function generatePaymentReference() {
+  return `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
 module.exports = {

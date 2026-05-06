@@ -59,7 +59,10 @@ async function sendLoginNotification(to, name) {
 }
 
 async function sendPurchaseConfirmationEmail(to, name, purchase) {
-  const subject = `Compra confirmada - ${purchase.evento_nombre}`;
+  const eventName = purchase.evento_nombre || "Evento desconocido";
+  const eventDate = purchase.evento_fecha || "Fecha no disponible";
+  const eventLocation = purchase.evento_lugar || "Lugar no disponible";
+  const subject = `Compra confirmada - ${eventName}`;
   const ticketRows = (purchase.tickets || [])
     .map(
       (ticket) => `
@@ -79,10 +82,11 @@ async function sendPurchaseConfirmationEmail(to, name, purchase) {
   const html = `
     <h2>Hola ${escapeHtml(name)},</h2>
     <p>Tu compra fue confirmada correctamente.</p>
-    <p><strong>Evento:</strong> ${escapeHtml(purchase.evento_nombre)}</p>
-    <p><strong>Fecha:</strong> ${escapeHtml(purchase.evento_fecha)}</p>
-    <p><strong>Lugar:</strong> ${escapeHtml(purchase.evento_lugar)}</p>
+    <p><strong>Evento:</strong> ${escapeHtml(eventName)}</p>
+    <p><strong>Fecha:</strong> ${escapeHtml(eventDate)}</p>
+    <p><strong>Lugar:</strong> ${escapeHtml(eventLocation)}</p>
     <p><strong>Total:</strong> RD$ ${Number(purchase.total).toFixed(2)}</p>
+    <p><strong>Pago:</strong> ${formatPaymentForEmail(purchase)}</p>
     <h3>Tus boletas</h3>
     <ul>${ticketRows}</ul>
   `;
@@ -90,10 +94,11 @@ async function sendPurchaseConfirmationEmail(to, name, purchase) {
 
 Tu compra fue confirmada correctamente.
 
-Evento: ${purchase.evento_nombre}
-Fecha: ${purchase.evento_fecha}
-Lugar: ${purchase.evento_lugar}
+Evento: ${eventName}
+Fecha: ${eventDate}
+Lugar: ${eventLocation}
 Total: RD$ ${Number(purchase.total).toFixed(2)}
+Pago: ${formatPaymentForText(purchase)}
 
 Tus boletas:
 ${ticketText}`;
@@ -108,6 +113,21 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function formatPaymentForEmail(purchase) {
+  return escapeHtml(formatPaymentForText(purchase));
+}
+
+function formatPaymentForText(purchase) {
+  if (!purchase.metodo_pago) {
+    return "No registrado";
+  }
+
+  const last4 = purchase.pago_ultimos4 ? ` terminada en ${purchase.pago_ultimos4}` : "";
+  const reference = purchase.referencia_pago ? `, referencia ${purchase.referencia_pago}` : "";
+
+  return `Tarjeta${last4}${reference}`;
 }
 
 module.exports = {

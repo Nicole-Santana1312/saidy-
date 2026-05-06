@@ -660,6 +660,24 @@ button[type="submit"] {
   color: #e2e8f0;
 }
 
+.payment-fieldset {
+  margin: 22px 0 0;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 16px;
+}
+
+.payment-fieldset legend {
+  padding: 0 8px;
+  font-weight: 800;
+}
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
 .form-message {
   margin: 0 0 18px;
   border-radius: 18px;
@@ -735,6 +753,10 @@ button[type="submit"] {
   }
 
   .ticket-inline-row {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1053,6 +1075,14 @@ button[type="submit"]:hover,
 }
 
 .ticket-price {
+  color: #111827;
+}
+
+.payment-fieldset {
+  border-color: var(--border);
+}
+
+.payment-fieldset legend {
   color: #111827;
 }
 

@@ -34,7 +34,7 @@ function renderSales(sales) {
   if (sales.length === 0) {
     salesTableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty-table">No hay ventas para mostrar.</td>
+        <td colspan="7" class="empty-table">No hay ventas para mostrar.</td>
       </tr>
     `;
     return;
@@ -54,9 +54,31 @@ function renderSaleRow(sale) {
       <td><span class="pill">${escapeHtml(sale.tipo_boleta)}</span></td>
       <td>${Number(sale.cantidad).toLocaleString("es-DO")}</td>
       <td>${formatCurrency(sale.total)}</td>
+      <td>${formatPayment(sale)}</td>
       <td>${formatDateTime(sale.fecha_compra)}</td>
     </tr>
   `;
+}
+
+function formatPayment(sale) {
+  if (!sale.metodo_pago) {
+    return '<span class="muted-cell">Venta manual</span>';
+  }
+
+  const card = sale.pago_ultimos4 ? ` **** ${escapeHtml(sale.pago_ultimos4)}` : "";
+  const reference = sale.referencia_pago
+    ? `<span class="muted-cell">${escapeHtml(sale.referencia_pago)}</span>`
+    : "";
+
+  return `<strong>${escapeHtml(formatPaymentMethod(sale.metodo_pago))}${card}</strong>${reference}`;
+}
+
+function formatPaymentMethod(value) {
+  const labels = {
+    tarjeta: "Tarjeta",
+  };
+
+  return labels[value] || value;
 }
 
 function formatCurrency(value) {

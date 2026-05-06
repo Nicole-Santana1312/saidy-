@@ -41,6 +41,7 @@ async function renderSalesPage(req, res) {
                     <th>Tipo de boleta</th>
                     <th>Cantidad</th>
                     <th>Total</th>
+                    <th>Pago</th>
                     <th>Fecha compra</th>
                   </tr>
                 </thead>

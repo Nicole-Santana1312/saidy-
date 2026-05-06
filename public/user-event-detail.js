@@ -5,6 +5,11 @@ const ticketTypeSelect = document.getElementById("ticket-type");
 const ticketQuantity = document.getElementById("ticket-quantity");
 const totalPrice = document.getElementById("total-price");
 const purchaseMessage = document.getElementById("purchase-message");
+const paymentMethod = document.getElementById("payment-method");
+const cardholderName = document.getElementById("cardholder-name");
+const cardNumber = document.getElementById("card-number");
+const cardExpiry = document.getElementById("card-expiry");
+const cardCvv = document.getElementById("card-cvv");
 
 const eventId = layout.dataset.eventId;
 let ticketTypes = [];
@@ -101,12 +106,18 @@ purchaseForm.addEventListener("submit", async (event) => {
       body: JSON.stringify({
         tipo_boleta_id: ticketTypeSelect.value,
         cantidad: Number(ticketQuantity.value),
+        payment_method: paymentMethod.value,
+        cardholder_name: cardholderName.value,
+        card_number: cardNumber.value,
+        card_expiry: cardExpiry.value,
+        card_cvv: cardCvv.value,
       }),
     });
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.message || "No se pudo completar la compra.");
+      const errorMessage = data.errors?.[0] || data.message || "No se pudo completar la compra.";
+      throw new Error(errorMessage);
     }
 
     showMessage(data.message || "Compra realizada correctamente. Revisa tu correo y tus boletos.", false);
@@ -124,6 +135,17 @@ purchaseForm.addEventListener("submit", async (event) => {
 
 ticketTypeSelect.addEventListener("change", updateTotalPrice);
 ticketQuantity.addEventListener("input", updateTotalPrice);
+cardNumber.addEventListener("input", () => {
+  const digits = cardNumber.value.replace(/\D/g, "").slice(0, 19);
+  cardNumber.value = digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+});
+cardExpiry.addEventListener("input", () => {
+  const digits = cardExpiry.value.replace(/\D/g, "").slice(0, 4);
+  cardExpiry.value = digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits;
+});
+cardCvv.addEventListener("input", () => {
+  cardCvv.value = cardCvv.value.replace(/\D/g, "").slice(0, 4);
+});
 
 function showMessage(message, isError) {
   purchaseMessage.hidden = false;
