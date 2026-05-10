@@ -1,5 +1,4 @@
-const eventModel = require("../models/eventModel");
-const ticketTypeModel = require("../models/ticketTypeModel");
+const eventService = require("../services/eventService");
 
 async function renderEventsPage(req, res) {
   return res.send(`
@@ -105,7 +104,7 @@ async function renderEventsPage(req, res) {
 
 async function listEvents(req, res, next) {
   try {
-    const events = await eventModel.listEvents();
+    const events = await eventService.listEvents();
     return res.json({ events });
   } catch (error) {
     return next(error);
@@ -114,7 +113,7 @@ async function listEvents(req, res, next) {
 
 async function getEvent(req, res, next) {
   try {
-    const event = await eventModel.findEventById(req.params.id);
+    const event = await eventService.findEventById(req.params.id);
 
     if (!event) {
       return res.status(404).json({ message: "Evento no encontrado." });
@@ -128,39 +127,12 @@ async function getEvent(req, res, next) {
 
 async function createEvent(req, res, next) {
   try {
-    const ticketTypes = Array.isArray(req.body.ticket_types)
-      ? req.body.ticket_types
-      : [];
-
-    if (ticketTypes.length === 0) {
-      return res.status(400).json({
-        message: "Debes agregar al menos un tipo de boleta para crear el evento.",
-      });
-    }
-
-    const event = await eventModel.createEvent(req.body);
-    const createdTicketTypes = [];
-
-    try {
-      for (const ticketType of ticketTypes) {
-        createdTicketTypes.push(
-          await ticketTypeModel.createTicketType({
-            evento_id: event.id,
-            tipo: ticketType.tipo,
-            precio: ticketType.precio,
-            cantidad_disponible: ticketType.cantidad_disponible,
-          })
-        );
-      }
-    } catch (ticketError) {
-      await eventModel.deleteEvent(event.id);
-      throw ticketError;
-    }
+    const { event, ticketTypes } = await eventService.createEventWithTickets(req.body);
 
     return res.status(201).json({
       message: "Evento y boletas creados correctamente.",
       event,
-      ticketTypes: createdTicketTypes,
+      ticketTypes,
     });
   } catch (error) {
     return next(error);
@@ -169,7 +141,7 @@ async function createEvent(req, res, next) {
 
 async function updateEvent(req, res, next) {
   try {
-    const event = await eventModel.updateEvent(req.params.id, req.body);
+    const event = await eventService.updateEvent(req.params.id, req.body);
 
     if (!event) {
       return res.status(404).json({ message: "Evento no encontrado." });
@@ -186,7 +158,7 @@ async function updateEvent(req, res, next) {
 
 async function deleteEvent(req, res, next) {
   try {
-    const wasDeleted = await eventModel.deleteEvent(req.params.id);
+    const wasDeleted = await eventService.deleteEvent(req.params.id);
 
     if (!wasDeleted) {
       return res.status(404).json({ message: "Evento no encontrado." });

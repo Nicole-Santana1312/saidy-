@@ -5,6 +5,7 @@ const { getSupabase } = require("./database");
 const SALT_ROUNDS = 12;
 
 let adminUser = null;
+let localAdminUser = null;
 
 const ADMIN_SELECT =
   "id, email, password_hash, role, creado_en, actualizado_en";
@@ -47,10 +48,19 @@ async function initializeAdmin() {
       }
 
       adminUser = newAdmin;
-    } else if (admins.role !== "super_admin") {
+    } else if (admins.role !== "super_admin" || env.adminResetPasswordOnStart) {
+      const updatePayload = {
+        role: "super_admin",
+        actualizado_en: new Date().toISOString(),
+      };
+
+      if (env.adminResetPasswordOnStart) {
+        updatePayload.password_hash = await bcrypt.hash(env.adminPassword, SALT_ROUNDS);
+      }
+
       const { data: promotedAdmin, error: updateError } = await supabase
         .from("admins")
-        .update({ role: "super_admin", actualizado_en: new Date().toISOString() })
+        .update(updatePayload)
         .eq("id", admins.id)
         .select(ADMIN_SELECT)
         .single();
@@ -67,6 +77,12 @@ async function initializeAdmin() {
     }
   } catch (error) {
     console.error("Error initializing admin:", error);
+    localAdminUser = {
+      id: "local-admin",
+      email: env.adminEmail.toLowerCase(),
+      role: "super_admin",
+      password_hash: await bcrypt.hash(env.adminPassword, SALT_ROUNDS),
+    };
   }
 }
 
@@ -95,6 +111,13 @@ async function findAdminByEmail(email) {
     return admin;
   } catch (error) {
     console.error("Error finding admin by email:", error);
+    if (
+      localAdminUser &&
+      localAdminUser.email.toLowerCase() === String(email).toLowerCase()
+    ) {
+      return localAdminUser;
+    }
+
     return null;
   }
 }

@@ -1,4 +1,4 @@
-const reportModel = require("../models/reportModel");
+const reportService = require("../services/reportService");
 
 async function renderReportsPage(req, res) {
   return res.send(`
@@ -9,6 +9,7 @@ async function renderReportsPage(req, res) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Reportes - Eventix</title>
         <link rel="stylesheet" href="/styles.css" />
+        <script src="/vendor/chart.js/chart.umd.js" defer></script>
         <script src="/reports.js" defer></script>
       </head>
       <body>
@@ -80,15 +81,7 @@ async function renderReportsPage(req, res) {
 
 async function getReports(req, res, next) {
   try {
-    const [summary, revenueByEvent] = await Promise.all([
-      reportModel.getReportSummary(),
-      reportModel.getRevenueByEvent(),
-    ]);
-
-    return res.json({
-      summary,
-      revenueByEvent,
-    });
+    return res.json(await reportService.getAdminReports());
   } catch (error) {
     return next(error);
   }

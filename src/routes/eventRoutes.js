@@ -2,6 +2,7 @@ const express = require("express");
 const eventController = require("../controllers/eventController");
 const { requireAdmin } = require("../middlewares/authMiddleware");
 const validateRequest = require("../middlewares/validateRequest");
+const { handleEventImageUpload } = require("../middlewares/uploadMiddleware");
 const {
   eventIdValidator,
   eventValidator,
@@ -23,6 +24,7 @@ router.get(
 router.post(
   "/api/eventos",
   requireAdmin,
+  handleEventImageUpload,
   eventValidator,
   validateRequest,
   eventController.createEvent
@@ -30,6 +32,7 @@ router.post(
 router.put(
   "/api/eventos/:id",
   requireAdmin,
+  handleEventImageUpload,
   eventIdValidator,
   eventValidator,
   validateRequest,

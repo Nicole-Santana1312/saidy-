@@ -4,11 +4,15 @@ const userModel = require("../models/userModel");
 
 async function dashboard(req, res, next) {
   try {
-    const [events, users, sales] = await Promise.all([
+    const [eventsResult, usersResult, salesResult] = await Promise.allSettled([
       eventModel.listEvents(),
       userModel.listUsers(),
       saleModel.listSales(),
     ]);
+
+    const events = eventsResult.status === "fulfilled" ? eventsResult.value : [];
+    const users = usersResult.status === "fulfilled" ? usersResult.value : [];
+    const sales = salesResult.status === "fulfilled" ? salesResult.value : [];
 
     const activeEvents = events.filter((event) => event.estado === "activo");
     const soldTickets = sales.reduce((sum, sale) => sum + Number(sale.cantidad || 0), 0);

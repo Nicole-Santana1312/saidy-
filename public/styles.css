@@ -1099,6 +1099,11 @@ button[type="submit"]:hover,
   color: #9f3f29;
 }
 
+.report-chart {
+  min-height: 340px;
+  position: relative;
+}
+
 @media (max-width: 1024px) {
   .sidebar {
     box-shadow: 0 24px 80px rgba(27, 40, 54, 0.24);

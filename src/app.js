@@ -44,6 +44,10 @@ app.use(express.urlencoded({ extended: false, limit: "6mb" }));
 app.use(express.json({ limit: "6mb" }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "..", "public")));
+app.use(
+  "/vendor/chart.js",
+  express.static(path.join(__dirname, "..", "node_modules", "chart.js", "dist"))
+);
 
 app.get("/", (req, res) => {
   res.redirect("/home");

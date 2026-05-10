@@ -17,6 +17,7 @@ const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1h",
   adminEmail: process.env.ADMIN_EMAIL || "admin@example.com",
   adminPassword: process.env.ADMIN_PASSWORD || "Admin12345!",
+  adminResetPasswordOnStart: process.env.ADMIN_RESET_PASSWORD_ON_START === "true",
   supabaseUrl: optionalEnv("SUPABASE_URL"),
   supabaseKey: optionalEnv("SUPABASE_ANON_KEY"),
   supabaseServiceKey: optionalEnv("SUPABASE_SERVICE_ROLE_KEY"),

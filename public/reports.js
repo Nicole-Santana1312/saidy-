@@ -3,6 +3,7 @@ const totalTickets = document.querySelector("[data-total-tickets]");
 const totalSales = document.querySelector("[data-total-sales]");
 const reportChart = document.querySelector("[data-report-chart]");
 const reportTableBody = document.querySelector("[data-report-table-body]");
+let revenueChart;
 
 async function loadReports() {
   const response = await fetch("/api/reportes", {
@@ -27,23 +28,43 @@ function renderChart(rows) {
     return;
   }
 
-  const maxIncome = Math.max(...rows.map((row) => Number(row.ingresos)), 1);
+  reportChart.innerHTML = '<canvas id="revenueChart" aria-label="Ingresos por evento"></canvas>';
 
-  reportChart.innerHTML = rows
-    .map((row) => {
-      const width = Math.max((Number(row.ingresos) / maxIncome) * 100, 2);
+  if (revenueChart) {
+    revenueChart.destroy();
+  }
 
-      return `
-        <div class="report-bar-row">
-          <span>${escapeHtml(row.evento_nombre)}</span>
-          <div>
-            <strong style="width: ${width}%"></strong>
-          </div>
-          <em>${formatCurrency(row.ingresos)}</em>
-        </div>
-      `;
-    })
-    .join("");
+  revenueChart = new Chart(document.querySelector("#revenueChart"), {
+    type: "bar",
+    data: {
+      labels: rows.map((row) => row.evento_nombre),
+      datasets: [
+        {
+          label: "Ingresos",
+          data: rows.map((row) => Number(row.ingresos)),
+          backgroundColor: "#176b87",
+          borderColor: "#004562",
+          borderWidth: 1,
+        },
+        {
+          label: "Boletas vendidas",
+          data: rows.map((row) => Number(row.boletas_vendidas)),
+          backgroundColor: "#f7b500",
+          borderColor: "#d95d39",
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+        },
+      },
+    },
+  });
 }
 
 function renderTable(rows) {

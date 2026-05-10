@@ -62,33 +62,38 @@ async function handleSubmit(event) {
   try {
     const formData = new FormData(form);
     const id = formData.get("id");
-    const imageValue = await getSelectedImageValue(formData);
-    const payload = {
-      nombre: formData.get("nombre").trim(),
-      fecha: formData.get("fecha"),
-      hora: formData.get("hora"),
-      lugar: formData.get("lugar").trim(),
-      categoria: formData.get("categoria"),
-      estado: formData.get("estado"),
-      descripcion: formData.get("descripcion").trim(),
-      imagen: imageValue,
-    };
+    const payload = new FormData();
+    payload.set("nombre", formData.get("nombre").trim());
+    payload.set("fecha", formData.get("fecha"));
+    payload.set("hora", formData.get("hora"));
+    payload.set("lugar", formData.get("lugar").trim());
+    payload.set("categoria", formData.get("categoria"));
+    payload.set("estado", formData.get("estado"));
+    payload.set("descripcion", formData.get("descripcion").trim());
+
+    if (imageFileInput.files[0]) {
+      payload.set("imagen_archivo", imageFileInput.files[0]);
+    } else {
+      payload.set("imagen", formData.get("imagen").trim());
+    }
 
     if (!id) {
-      payload.ticket_types = getTicketTypePayload();
+      const ticketTypes = getTicketTypePayload();
 
-      if (payload.ticket_types.length === 0) {
+      if (ticketTypes.length === 0) {
         showMessage("Agrega al menos un tipo de boleta con precio, stock y tipo.", true);
         return;
       }
+
+      payload.set("ticket_types", JSON.stringify(ticketTypes));
     }
 
     const url = id ? `/api/eventos/${id}` : "/api/eventos";
     const method = id ? "PUT" : "POST";
     const response = await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(payload),
+      headers: { Accept: "application/json" },
+      body: payload,
     });
     const data = await readJsonResponse(response);
 
@@ -227,16 +232,6 @@ function addTicketRow(values = {}) {
     <button type="button" class="compact-button danger" data-remove-ticket-row>Eliminar</button>
   `;
   ticketRows.appendChild(row);
-}
-
-async function getSelectedImageValue(formData) {
-  const file = imageFileInput.files[0];
-
-  if (file) {
-    return readImageAsDataUrl(file);
-  }
-
-  return formData.get("imagen").trim();
 }
 
 function readImageAsDataUrl(file) {
