@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "Eventix API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+        "url": "{{baseUrl}}/login",
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "email", "value": "admin@example.com", "type": "text" },
+            { "key": "password", "value": "Admin12345!", "type": "text" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Listar eventos",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/eventos"
+      }
+    },
+    {
+      "name": "Crear evento con imagen",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/eventos",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "nombre", "value": "Concierto Eventix", "type": "text" },
+            { "key": "fecha", "value": "2026-12-20", "type": "text" },
+            { "key": "hora", "value": "20:00", "type": "text" },
+            { "key": "lugar", "value": "Santo Domingo", "type": "text" },
+            { "key": "categoria", "value": "concierto", "type": "text" },
+            { "key": "estado", "value": "activo", "type": "text" },
+            { "key": "descripcion", "value": "Evento de prueba", "type": "text" },
+            { "key": "imagen_archivo", "type": "file", "src": "" },
+            { "key": "ticket_types", "value": "[{\"tipo\":\"General\",\"precio\":1000,\"cantidad_disponible\":100}]", "type": "text" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Listar ventas",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/ventas"
+      }
+    },
+    {
+      "name": "Reportes",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/reportes"
+      }
+    },
+    {
+      "name": "Listar usuarios",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/usuarios"
+      }
+    }
+  ]
+}

@@ -133,9 +133,41 @@ El sistema incluye:
 - Validacion de formularios y APIs con `express-validator`.
 - Contrasenas de administrador encriptadas con `bcrypt`.
 - Cookies `HttpOnly` y `SameSite=Strict` para la sesion.
-- Limite de intentos de inicio de sesion por IP.
+- Limite de intentos de inicio de sesion por IP usando `express-rate-limit`.
 - Limite de tamano para formularios y JSON.
 - Manejo centralizado de errores con respuestas seguras.
+
+## Entrega profesional
+
+El proyecto incluye estructura por responsabilidades:
+
+```text
+src/controllers
+src/routes
+src/middlewares
+src/services
+src/models
+src/validators
+```
+
+Tambien incluye:
+
+- `.env.example` y `.env` local para variables seguras.
+- `database/schema.sql` con relaciones SQL y claves foraneas.
+- Subida real de imagenes con `multer` en `public/uploads/events`.
+- Coleccion Postman en `postman/Eventix.postman_collection.json`.
+- Pruebas Playwright en `tests/e2e`.
+- Script Lighthouse para generar `reports/lighthouse/login.html`.
+- Reportes con Chart.js servido localmente desde `node_modules`.
+
+Comandos utiles:
+
+```bash
+npm.cmd run dev
+npm.cmd test
+npm.cmd run test:e2e
+npm.cmd run lighthouse
+```
 
 ## Reportes
 
