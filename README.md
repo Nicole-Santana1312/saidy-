@@ -49,7 +49,7 @@ Abre: http://localhost:3000
 
 **Acceso**: http://localhost:3000/login
 **Email**: admin@example.com
-**Contraseña**: Admin12345!
+**Contraseña**: Admin123456!
 
 ## Rutas principales
 
