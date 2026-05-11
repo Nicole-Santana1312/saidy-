@@ -40,6 +40,7 @@ function renderLogin(req, res) {
           <section class="auth-panel">
             <img class="auth-logo" src="/eventix-logo.svg" alt="Eventix" />
             <h1>Eventix</h1>
+            <p class="eyebrow">Administrador</p>
             ${error}
             <form action="/login" method="post" novalidate>
               <label for="email">Email</label>
@@ -50,6 +51,12 @@ function renderLogin(req, res) {
 
               <button type="submit">Iniciar sesion</button>
             </form>
+            <p class="auth-link">
+              No tienes cuenta? <a href="/user/register">Registrate aqui</a>
+            </p>
+            <p class="auth-link">
+              Eres usuario? <a href="/user/login">Inicia sesion como usuario</a>
+            </p>
           </section>
         </main>
       </body>

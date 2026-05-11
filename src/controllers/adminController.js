@@ -53,7 +53,11 @@ async function dashboard(req, res, next) {
               </div>
 
               <nav class="sidebar-nav" aria-label="Navegacion principal">
-                <a class="nav-link active" href="/admin/eventos" data-section="eventos">
+                <a class="nav-link active" href="/admin/dashboard" data-section="dashboard">
+                  <span aria-hidden="true">DB</span>
+                  Dashboard
+                </a>
+                <a class="nav-link" href="/admin/eventos" data-section="eventos">
                   <span aria-hidden="true">EV</span>
                   Eventos
                 </a>

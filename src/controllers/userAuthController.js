@@ -64,6 +64,9 @@ function renderLoginPage(req, res) {
             <p class="auth-link">
               ¿No tienes cuenta? <a href="/user/register">Regístrate aquí</a>
             </p>
+            <p class="auth-link">
+              Eres administrador? <a href="/login">Entrar al panel administrativo</a>
+            </p>
           </section>
         </main>
       </body>
